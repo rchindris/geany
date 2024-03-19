@@ -1,0 +1,35 @@
+# Configuration defs for NLP sample generation tasks.
+
+dataset:
+  num_samples_per_prompt: pos_int
+  train_test_split: percent
+  output_dir: dir
+  dataset_format:
+    type: str
+    validator: hval.lower() in ["csv", "json"]
+    default: "csv"
+
+gpt:
+  engine:
+    type: str
+    default: "gpt-3.5-turbo"
+    required: True
+  api_key:
+    type: str
+    required: True
+
+intent:
+  tag: snake_case_id
+  description: str
+  examples:
+    type: str
+    allow_many: True
+  slots:
+    type: snake_case_id
+    allow_many: True
+
+intent_prompt:
+  domain_spec: str
+  intents:
+    type: intent
+    allow_many: True
