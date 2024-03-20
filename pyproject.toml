@@ -12,6 +12,8 @@ click = "^8.1.7"
 jinja2 = "^3.1.3"
 openai = "^1.13.3"
 hyperconf = {path = "../hyperconf"}
+pandas = "^2.2.1"
+numpy = "^1.26.4"
 
 [build-system]
 requires = ["poetry-core"]

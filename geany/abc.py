@@ -34,7 +34,7 @@ class Prompt:
         ...
 
     @abstractmethod
-    def extract_samples(self, text: str):
+    def parse_output(self, text: str):
         """Parse the given text and extract samples."""
         ...
 

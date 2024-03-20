@@ -1,9 +1,15 @@
 # Configuration defs for NLP sample generation tasks.
 
 dataset:
-  num_samples_per_prompt: pos_int
-  train_test_split: percent
-  output_dir: dir
+  num_samples_per_prompt:
+    type: pos_int
+    required: True
+  train_test_split:
+    type: percent
+    default: 0.8
+  output_dir:
+    type: dir
+    required: True
   dataset_format:
     type: str
     validator: hval.lower() in ["csv", "json"]

@@ -1,5 +1,8 @@
 """Prompt for joint intent and slot sample generation."""
 
+import re
+import logging
+
 from typing import Dict, List
 from jinja2 import Template
 
@@ -65,7 +68,6 @@ Some examples for this intent are:
 [{{ intent_tag }} {{ ex }} ]
 {% endfor %}
     """
-
     def __init__(self, domain_desc: str, intent_tag: str,
                  intent_desc: str, slots: List[str], examples: List[str]):
         """Initialize for specified intents and slot specs.
@@ -94,6 +96,8 @@ Some examples for this intent are:
         }
         self._template = Template(IntentWithSlotPrompt._PROMPT_TEMPLATE)
         
+        self._re_int = re.compile(r"\[\s*(I_[A-Z_]+)(.*)\]")
+        self._re_slot = re.compile(r"\[\s*(SL_[A-Z]+)\s+([^\]]+)\]")
 
     def get_context(self):
         return self._template.render(self._context)
@@ -101,5 +105,63 @@ Some examples for this intent are:
     def get_instruction(self, num_samples: int):
         return f"Generate {num_samples} utterances for intent {self._intent_tag}."\
             " Try not to repeat utterances."
+
+    def parse_output(self, text: str):
+        """Extract annotated samples from the output.
+
+        The `text` is the raw output from the LLM, it contains lines
+        formatted as =[I_INTENT token token ... [SL_SLOT slot ...]...]=.
+        This function parses each line and returns a dictionary containing:
+        intents - a list of intent labels, one for each line
+        text - the raw utterance text, with annotations removed.
+        slots - a string containing slot labels and the special `O` label.
+        """
+        if text is None:
+            raise ValueError("text is None")
+
+        samples = {
+            "intent": [],
+            "text": [],
+            "slots": []
+        }
+        
+        lines = [line.strip() for line in text.split("\n")]
+        for line in lines:
+            intent_match = self._re_int.match(line)
+            if not intent_match:
+                logging.error(f"incorrect sample: {line}")
+                continue
+            
+            tokens = []
+            slot_labels = []
+            sub_pos = 0
+            
+            intent = intent_match.group(1)
+            utterance = intent_match.group(2)
+            
+            for m in  self._re_slot.finditer(utterance):
+                new_tokens = [x for x in utterance[sub_pos: m.start()].split(" ") if len(x)]
+    
+                tokens.extend(new_tokens)
+                slot_labels.extend(['O'] * len(new_tokens))
+
+                slot_label = m.group(1)
+                slot_tokens = [x for x in m.group(2).split(" ") if len(x)]
+
+                tokens.extend(slot_tokens)
+                slot_labels.extend([slot_label] * len(slot_tokens))
+
+                sub_pos = m.end() + 1
+
+            samples["intent"].append(intent)
+            samples["text"].append(" ".join(tokens))
+            samples["slots"].append(" ".join(slot_labels))
+
+        return samples
+
+                
+                
+        
+    
     
     

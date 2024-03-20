@@ -22,8 +22,9 @@ class Gpt(LLMSampleGenerator):
 
         self._client = openai.OpenAI(api_key=config.api_key)
         self._engine = config.engine
+        self._messages = []
 
-    def set_context(initial_context: str):
+    def set_context(self, initial_context: str):
         """Set the initial system message.
 
         Args:
@@ -47,15 +48,14 @@ class Gpt(LLMSampleGenerator):
         self._messages.append({
             "role": "user",
             "content": command
-        },
-                              )
+        })
         response = self._client.chat.completions.create(
             model=self._engine,
             messages=self._messages
         )
 
         samples = response.choices[0].message.content
-        self.messages.append({
+        self._messages.append({
             "role": "system",
             "content": samples
         })
